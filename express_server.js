@@ -1,16 +1,20 @@
 const express = require("express");
 const app = express();
 const PORT = 8080;
-
 const bodyParser = require("body-parser");
+
 app.use(bodyParser.urlencoded({extended: true}));
+
+function generateRandomString() {
+  return Math.random().toString(36).substring(2,8)
+};
 
 // This tells the Express app to use EJS as it templating engine.
 app.set("view engine", "ejs");
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http//www.google.com"
+  "9sm5xK": "http://www.google.com"
 };
 
 app.get("/", (req, res) => {
@@ -39,8 +43,10 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);
-  res.send("Ok"); 
+  res.status(200);
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = req.body.longURL
+  res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
@@ -48,3 +54,8 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars)
 });
 
+app.get("/u/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL];
+  res.redirect(longURL);
+})
