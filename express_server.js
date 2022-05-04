@@ -104,10 +104,12 @@ app.post('/urls/:shortURL', (req, res) => {
   res.redirect("/urls");
 });
 
-app.post('/login', (req, res) => {
-  const username = req.body.username;
-  res.cookie("username", username);
-  res.redirect('/urls');
+app.get('/login', (req, res) => {
+  const templateVars = {
+    "user_id": req.cookies["user_id"],
+    "user": users[req.cookies["user_id"]]
+  };
+  res.render("urls_login", templateVars);
 });
 
 app.post("/logout", (req, res) => {
