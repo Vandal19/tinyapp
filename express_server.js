@@ -32,7 +32,7 @@ const users = {
   }
 };
 
-const ifEmailExists = (email, users) => {
+const getUserInfo = (email, users) => {
   for (let user in users) {
     if (users[user].email === email) {
       return users[user];
@@ -112,9 +112,25 @@ app.get('/login', (req, res) => {
   res.render("urls_login", templateVars);
 });
 
+app.post('/login', (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  const user = getUserInfo(email, users);
+  if (!user) {
+    return res.status(403).send('Email does not exist, please check again or sign up this new email');
+  }
+  if (user.password === password) {
+    res.cookie('user_id', user.id);
+    res.redirect('/urls');
+    return;
+  } else {
+    return res.status(403).send('Incorrect password, please try again!');
+  }
+});
+
 app.post("/logout", (req, res) => {
   res.clearCookie('user_id');
-  res.redirect('/urls');
+  res.redirect('/login');
 });
 
 app.get("/register", (req, res) => {
@@ -132,7 +148,7 @@ app.post("/register", (req, res) => {
   if (!email || !password) {
     return res.status(400).send('Email or Password field cannot be empty. Please try again!');
   }
-  if (ifEmailExists(email, users)) {
+  if (getUserInfo(email, users)) {
     return res.status(400).send('Email already exist, please try another email');
   }
   const user = {
@@ -142,7 +158,6 @@ app.post("/register", (req, res) => {
   };
   users[userID] = user;
   res.cookie("user_id", userID);
-  console.log(users);
   res.redirect("/urls");
 });
 
