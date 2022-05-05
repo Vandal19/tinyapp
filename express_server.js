@@ -4,6 +4,7 @@ const PORT = 8080;
 const bodyParser = require("body-parser");
 const { restart } = require("nodemon");
 const cookieParser = require("cookie-parser");
+const bcrypt = require('bcryptjs');
 
 app.use(bodyParser.urlencoded({ extended: true }));
 // This tells the Express app to use EJS as it templating engine.
@@ -29,14 +30,16 @@ const users = {
   "admin": {
     id: "admin",
     email: "tinyAppAdmin@gmail.com",
-    password: "Admin123"
+    password: "$2a$10$ES0ws8Rxk7NpXhu8cLc6zuULDbmYFSzpDNr7OYkJxnf1JsD8J4H7."
   },
   "bob": {
     id: "bob",
     email: "Bob@gmail.com",
-    password: "Qwerty987$"
+    password: "$2a$10$ES0ws8Rxk7NpXhu8cLc6zuULDbmYFSzpDNr7OYkJxnf1JsD8J4H7."
   }
 };
+console.log(users);
+
 
 const getUserInfo = (email, users) => {
   for (let user in users) {
@@ -69,18 +72,19 @@ app.post("/register", (req, res) => {
   const userID = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
   if (!email || !password) {
     return res.status(400).send('Email or Password field cannot be empty. Please try again!');
   }
-  if (getUserInfo(email, users)) {
-    return res.status(400).send('Email already exist, please try another email');
-  }
-  const users = {
+  const newUser = {
     'id': userID,
     'email': email,
-    'password': password,
+    'password': hashedPassword,
   };
-  users[userID] = users;
+  if (getUserInfo(email, newUser)) {
+    return res.status(400).send('Email already exist, please try another email')
+  }
+  users[userID] = newUser;
   res.cookie("user_id", userID);
   res.redirect("/urls");
 });
@@ -100,7 +104,8 @@ app.post('/login', (req, res) => {
   if (!user) {
     return res.status(403).send('Email does not exist, please check again or sign up this new email');
   }
-  if (user.password === password) {
+  // console.log(bcrypt.hashSync("Qwerty987$", 10));
+  if (bcrypt.compare(password, user.password)) {
     res.cookie('user_id', user.id);
     res.redirect('/urls');
     return;
