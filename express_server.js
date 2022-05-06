@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 const express = require("express");
 const app = express();
 const PORT = 8080;
@@ -6,10 +5,10 @@ const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
 const bcrypt = require('bcryptjs');
 const { generateRandomString, getUserByEmail, urlsForUser } = require("./helper");
+const { urlDatabase, users } = require("./database")
 
 app.use(bodyParser.urlencoded({ extended: true }));
-// This tells the Express app to use EJS as it templating engine.
-app.set("view engine", "ejs");
+app.set("view engine", "ejs");  // This tells the Express app to use EJS as it templating engine.
 app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2', 'key3'],
@@ -17,31 +16,7 @@ app.use(cookieSession({
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }));
 
-const urlDatabase = {
-  "b2xVn2": {
-    longURL: "http://www.lighthouselabs.ca",
-    userID: "admin"
-  },
-  "9sm5xK": {
-    longURL: "http://www.google.com",
-    userID: "bob"
-  }
-};
-
-const users = {
-  "admin": {
-    id: "admin",
-    email: "tinyAppAdmin@gmail.com",
-    password: "$2a$10$ES0ws8Rxk7NpXhu8cLc6zuULDbmYFSzpDNr7OYkJxnf1JsD8J4H7."
-  },
-  "bob": {
-    id: "bob",
-    email: "Bob@gmail.com",
-    password: "$2a$10$ES0ws8Rxk7NpXhu8cLc6zuULDbmYFSzpDNr7OYkJxnf1JsD8J4H7."
-  }
-};
-console.log(users);
-
+/* Get and Post for Registration */
 app.get("/register", (req, res) => {
   const templateVars = {
     "user_id": req.session.user_id,
@@ -71,6 +46,7 @@ app.post("/register", (req, res) => {
   res.redirect("/urls");
 });
 
+/* Get and Post for Login*/
 app.get('/login', (req, res) => {
   const templateVars = {
     "user_id": req.session.user_id,
@@ -102,6 +78,7 @@ app.post('/login', (req, res) => {
     });
 });
 
+/* Get Requests */
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -126,7 +103,7 @@ app.get("/urls", (req, res) => {
     // console.log("checkDatabase", urlsForUser("bob", urlDatabase));
     res.render("urls_index", templateVars);
   } else {
-    return res.status(400).send("You are not logged in, please login first");
+    return res.status(401).send("You are not logged in, please login first");
   }
 });
 
@@ -140,7 +117,7 @@ app.get("/urls/new", (req, res) => {
     };
     res.render("urls_new", templateVars);
   } else {
-    res.redirect("/login");
+    return res.status(401).send("You are not logged in, please login first");
   }
 });
 
@@ -160,10 +137,11 @@ app.get('/u/:shortURL', (req, res) => {
     const longURL = urlDatabase[shortURL]['longURL'];
     res.redirect(longURL);
   } else {
-    res.status(400).send("ID does not exist, please check!");
+    res.status(404).send("ID does not exist, please check!");
   }
 });
 
+/* Post Requests */
 app.post("/urls", (req, res) => {
   const userID = req.session.user_id;
   if (userID) {
@@ -188,7 +166,7 @@ app.post('/urls/:shortURL', (req, res) => {
       longURL: req.body.longURL,
       userID
     };
-    res.redirect("urls_index");
+    res.redirect("/urls");
   }
 });
 
